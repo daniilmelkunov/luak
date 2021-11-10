@@ -21,6 +21,8 @@
  */
 package org.luaj.vm2
 
+import java.io.Serializable
+
 /**
  * Data class to hold debug information relating to local variables for a [Prototype]
  */
@@ -37,6 +39,6 @@ class LocVars(
     @kotlin.jvm.JvmField var startpc: Int,
     /** The instruction offset when the variable goes out of scope  */
     @kotlin.jvm.JvmField var endpc: Int
-) {
+) : Serializable {
     fun tojstring(): String = "$varname $startpc-$endpc"
 }

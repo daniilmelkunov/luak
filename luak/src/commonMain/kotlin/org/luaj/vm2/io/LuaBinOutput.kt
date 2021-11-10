@@ -1,10 +1,10 @@
 package org.luaj.vm2.io
 
-import org.luaj.vm2.internal.*
 import org.luaj.vm2.internal.arraycopy
-import kotlin.math.*
+import java.io.Serializable
+import kotlin.math.max
 
-abstract class LuaBinOutput {
+abstract class LuaBinOutput : Serializable {
     abstract fun write(value: Int)
     open fun write(b: ByteArray, i: Int, size: Int) = run { for (n in 0 until size) write(b[i + n].toInt() and 0xFF) }
     fun write(b: ByteArray) = write(b, 0, b.size)

@@ -21,8 +21,8 @@
  */
 package org.luaj.vm2
 
-import org.luaj.vm2.LuaTable.Companion.log2
 import org.luaj.vm2.internal.*
+import java.io.Serializable
 import kotlin.jvm.*
 import kotlin.math.*
 
@@ -852,7 +852,7 @@ open class LuaTable : LuaValue, Metatable {
     /**
      * Represents a slot in the hash table.
      */
-    interface Slot {
+    interface Slot : Serializable {
 
         /** Return hash{pow2,mod}( first().key().hashCode(), sizeMask )  */
         fun keyindex(hashMask: Int): Int

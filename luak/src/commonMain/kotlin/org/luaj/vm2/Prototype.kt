@@ -21,6 +21,8 @@
  */
 package org.luaj.vm2
 
+import java.io.Serializable
+
 /**
  * Prototype representing compiled lua code.
  *
@@ -83,7 +85,7 @@ package org.luaj.vm2
  * @see Print.print
  */
 
-class Prototype {
+class Prototype : Serializable {
     /* constants used by the function */
     @kotlin.jvm.JvmField var k: Array<LuaValue> = arrayOf()
     @kotlin.jvm.JvmField var code: IntArray = IntArray(0)

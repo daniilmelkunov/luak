@@ -21,9 +21,10 @@
  */
 package org.luaj.vm2
 
-import org.luaj.vm2.internal.*
-import kotlin.math.*
-import kotlin.reflect.*
+import org.luaj.vm2.internal.arraycopy
+import java.io.Serializable
+import kotlin.math.min
+import kotlin.reflect.KClass
 
 /**
  * Class to encapsulate varargs values, either as part of a variable argument list, or multiple return values.
@@ -54,7 +55,7 @@ import kotlin.reflect.*
  * @see LuaValue.varargsOf
  * @see LuaValue.subargs
  */
-abstract class Varargs {
+abstract class Varargs : Serializable {
 
     /**
      * Return true if this is a TailcallVarargs

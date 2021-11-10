@@ -1,9 +1,9 @@
 package org.luaj.vm2
 
-import org.luaj.vm2.internal.*
-import kotlin.native.concurrent.*
+import java.io.Serializable
+import kotlin.native.concurrent.ThreadLocal
 
-open class LuaRuntime {
+open class LuaRuntime : Serializable {
     /** Simple cache of recently created strings that are short.
      * This is simply a list of strings, indexed by their hash codes modulo the cache size
      * that have been recently constructed.  If a string is being constructed frequently

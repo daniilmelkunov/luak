@@ -21,6 +21,8 @@
  */
 package org.luaj.vm2
 
+import java.io.Serializable
+
 
 /** Upvalue used with Closure formulation
  *
@@ -37,7 +39,7 @@ package org.luaj.vm2
 class UpValue(
     @kotlin.jvm.JvmField internal var array: Array<LuaValue?>, // initially the stack, becomes a holder
     @kotlin.jvm.JvmField internal var index: Int
-) {
+)  : Serializable {
 
     /**
      * Get the value of the upvalue

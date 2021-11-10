@@ -21,10 +21,12 @@
  */
 package org.luaj.vm2
 
+import java.io.Serializable
+
 class Upvaldesc(/* upvalue name (for debug information) */
     @kotlin.jvm.JvmField var name: LuaString?, /* whether it is in stack */
     @kotlin.jvm.JvmField val instack: Boolean, idx: Int
-) {
+)   : Serializable {
     /* index of upvalue (in stack or in outer function's list) */
     @kotlin.jvm.JvmField val idx: Short = idx.toShort()
 

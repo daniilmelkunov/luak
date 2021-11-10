@@ -23,6 +23,7 @@ package org.luaj.vm2.lib.jse
 
 import org.luaj.vm2.LuaTable
 import org.luaj.vm2.LuaValue
+import java.io.Serializable
 
 /**
  * Helper class to coerce values from lua to Java within the luajava library.
@@ -63,7 +64,7 @@ object CoerceLuaToJava {
 
     internal val COERCIONS: MutableMap<Class<*>, Coercion> = HashMap()
 
-    internal interface Coercion {
+    internal interface Coercion : Serializable {
         fun score(value: LuaValue): Int
         fun coerce(value: LuaValue): Any?
     }

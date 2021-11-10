@@ -21,13 +21,14 @@
  */
 package org.luaj.vm2.lib.jse
 
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
-
+import Vera.DieException
+import Vera.SuspendExecution
 import org.luaj.vm2.LuaError
 import org.luaj.vm2.LuaFunction
 import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
 
 /**
  * LuaValue that represents a Java method.
@@ -43,17 +44,21 @@ import org.luaj.vm2.Varargs
  *
  * @see CoerceLuaToJava
  */
-internal class JavaMethod private constructor(val method: Method) :
-    JavaMember(method.parameterTypes, method.modifiers) {
+internal class JavaMethod :
+    JavaMember {
 
-    init {
+    private var fullName: String?
+
+    private constructor(method: Method, fullName: String? = null) : super(method.parameterTypes, method.modifiers) {
+        this.fullName = fullName
         try {
+            this.fullName = method.toGenericString()
             if (!method.isAccessible)
                 method.isAccessible = true
         } catch (s: SecurityException) {
         }
-
     }
+
 
     override fun call(): LuaValue {
         return LuaValue.error("method cannot be called without instance")
@@ -78,8 +83,13 @@ internal class JavaMethod private constructor(val method: Method) :
     fun invokeMethod(instance: Any?, args: Varargs): LuaValue {
         val a = convertArgs(args)
         try {
-            return CoerceJavaToLua.coerce(method.invoke(instance, *a))
+            return CoerceJavaToLua.coerce(methods[fullName]!!.invoke(instance, *a))
         } catch (e: InvocationTargetException) {
+            if (e.targetException is SuspendExecution) {
+                throw e.targetException as SuspendExecution
+            } else if (e.targetException is DieException) {
+                throw e.targetException as DieException
+            }
             throw LuaError(e.targetException)
         } catch (e: Exception) {
             return LuaValue.error("coercion error $e")
@@ -144,11 +154,19 @@ internal class JavaMethod private constructor(val method: Method) :
 
     companion object {
 
-        @kotlin.jvm.JvmField
-        val methods: MutableMap<Method, JavaMethod> = HashMap()
+        private var javaMethods: MutableMap<String, JavaMethod> = HashMap()
+        private var methods: MutableMap<String, Method> = HashMap()
 
          fun forMethod(m: Method): JavaMethod {
-            return methods[m] ?: return JavaMethod(m).also { methods[m] = it }
+             val fullName = m.toGenericString()
+             var j = javaMethods[fullName]
+             if (j == null) {
+                 javaMethods[fullName] = JavaMethod(m).also { j = it }
+                 methods[fullName] = m
+             }
+             return j!!
+
+//            return methods[m] ?: return JavaMethod(m).also { methods[m] = it }
         }
 
          fun forMethods(m: Array<JavaMethod>): LuaFunction {

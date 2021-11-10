@@ -21,14 +21,21 @@
  */
 package org.luaj.vm2
 
+import org.luaj.vm2.Globals.Compiler
+import org.luaj.vm2.Globals.Loader
+import org.luaj.vm2.Globals.Undumper
 import org.luaj.vm2.internal.*
 import org.luaj.vm2.io.*
-
 import org.luaj.vm2.lib.BaseLib
 import org.luaj.vm2.lib.DebugLib
 import org.luaj.vm2.lib.IoLib
 import org.luaj.vm2.lib.PackageLib
 import org.luaj.vm2.lib.ResourceFinder
+import java.io.IOException
+import java.io.ObjectInputStream
+import java.io.Serializable
+import java.lang.ClassNotFoundException
+import java.lang.System
 import kotlin.jvm.*
 import kotlin.math.*
 
@@ -126,19 +133,19 @@ open class Globals(
 ) : LuaTable() {
 
     /** The current default input stream.  */
-    @kotlin.jvm.JvmField var STDIN: LuaBinInput = JSystem.`in`
+    @kotlin.jvm.JvmField @Transient var STDIN: LuaBinInput = JSystem.`in`
 
     /** The current default output stream.  */
-    @kotlin.jvm.JvmField var STDOUT: LuaWriter = JSystem.out
+    @kotlin.jvm.JvmField @Transient var STDOUT: LuaWriter = JSystem.out
 
     /** The current default error stream.  */
-    @kotlin.jvm.JvmField var STDERR: LuaWriter = JSystem.err
+    @kotlin.jvm.JvmField @Transient var STDERR: LuaWriter = JSystem.err
 
     /** The installed ResourceFinder for looking files by name.  */
     @kotlin.jvm.JvmField var finder: ResourceFinder? = null
 
     /** The currently running thread.  Should not be changed by non-library code.  */
-    @kotlin.jvm.JvmField var running: LuaThread = LuaThread(this)
+    @kotlin.jvm.JvmField @Transient var running: LuaThread = LuaThread(this)
 
     /** The BaseLib instance loaded into this Globals  */
     @kotlin.jvm.JvmField var baselib: BaseLib? = null
@@ -164,20 +171,29 @@ open class Globals(
      */
     @kotlin.jvm.JvmField var undumper: Undumper? = null
 
+    @Throws(IOException::class, ClassNotFoundException::class)
+    private fun readObject(stream: ObjectInputStream) {
+        stream.defaultReadObject()
+        STDIN = JSystem.`in`
+        STDOUT = JSystem.out
+        STDERR = JSystem.err
+        running = LuaThread(this)
+    }
+
     /** Interface for module that converts a Prototype into a LuaFunction with an environment.  */
-    interface Loader {
+    interface Loader : Serializable {
         /** Convert the prototype into a LuaFunction with the supplied environment.  */
         fun load(prototype: Prototype, chunkname: String, env: LuaValue): LuaFunction
     }
 
     /** Interface for module that converts lua source text into a prototype.  */
-    interface Compiler {
+    interface Compiler : Serializable {
         /** Compile lua source into a Prototype. The InputStream is assumed to be in UTF-8.  */
         fun compile(stream: LuaBinInput, chunkname: String): Prototype
     }
 
     /** Interface for module that loads lua binary chunk into a prototype.  */
-    interface Undumper {
+    interface Undumper : Serializable {
         /** Load the supplied input stream into a prototype.  */
         fun undump(stream: LuaBinInput, chunkname: String): Prototype?
     }
