@@ -1,15 +1,13 @@
-package Vera
+package SerializableObjects
 
 import org.luaj.vm2.LuaClosure
 import org.luaj.vm2.LuaString
 import org.luaj.vm2.LuaValue
-import java.io.IOException
-import java.io.Serializable
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.*
 
-class SerializableExecutionLuaStack : Serializable {
+class SerializableExecutionLuaStack : java.io.Serializable {
     /**
      * Время создания стэка исполнения, считается временем начала исполнения скрипта
      */
@@ -18,7 +16,7 @@ class SerializableExecutionLuaStack : Serializable {
     /**
      * Стэк исполнения, содержащий в себе стэки вложенных друг в друга lua-функций
      */
-    private val closureStacks: Stack<SerializableLuaClosureStack> =
+    private var closureStacks: Stack<SerializableLuaClosureStack> =
         Stack<SerializableLuaClosureStack>()
 
     /**
@@ -46,18 +44,6 @@ class SerializableExecutionLuaStack : Serializable {
      * Функция, вызываемая при завершении зваонка пользователем
      */
     var userEndCallClosure: LuaClosure? = null
-
-    /**
-     * Складирование десериализуемого стэка в контекст потока для дальнейшей работы с ним
-     * @param stream
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
-    @Throws(IOException::class, java.lang.ClassNotFoundException::class)
-    private fun readObject(stream: java.io.ObjectInputStream) {
-        stream.defaultReadObject()
-        ThreadLocalExecutionStack.put(this)
-    }
 
     fun getScriptStartTime(): Long {
         return scriptStartTime

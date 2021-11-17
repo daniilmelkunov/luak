@@ -21,11 +21,8 @@
  */
 package org.luaj.vm2
 
-import Vera.DieException
-import Vera.SerializableExecutionLuaStack
-import Vera.SerializableLuaClosureStack
-import Vera.SuspendExecution
-import Vera.ThreadLocalExecutionStack
+import SerializableObjects.SerializableExecutionLuaStack
+import SerializableObjects.SerializableLuaClosureStack
 import org.luaj.vm2.internal.arraycopy
 import java.lang.System
 
@@ -111,13 +108,22 @@ class LuaClosure
 
      internal val globals: Globals? = if (env is Globals) env else null
 
-    private var executionStack: SerializableExecutionLuaStack? = ThreadLocalExecutionStack.get()
 
     override fun isclosure(): Boolean = true
     override fun optclosure(defval: LuaClosure?): LuaClosure? = this
     override fun checkclosure(): LuaClosure? = this
     override fun getmetatable(): LuaValue? = LuaFunction.s_metatable
     override fun tojstring(): String = "function: $p"
+
+    var executionStack: SerializableExecutionLuaStack? = null
+
+    fun getExecutionContext() : SerializableExecutionLuaStack?{
+        return executionStack
+    }
+
+    fun setReturnValue(value: String){
+        executionStack!!.SetReturnValue(LuaValue.valueOf(value))
+    }
 
     private fun getNewStack(): Array<LuaValue> {
         val max = p.maxstacksize
@@ -132,7 +138,7 @@ class LuaClosure
     }
 
     private fun restoreOrCreateStack(): Array<LuaValue> {
-        if (executionStack == null) executionStack = ThreadLocalExecutionStack.get()
+        if (executionStack == null) executionStack = SerializableExecutionLuaStack()
         val stack: Array<LuaValue>
         val level: Int = executionStack?.getCurrentLevel() ?: 0
         val stackAlreadyExists: Boolean = level <= (executionStack!!.getClosureStacks().size ?: 0) - 1
@@ -214,6 +220,11 @@ class LuaClosure
         val stack = restoreOrCreateStack()
         for (i in 0 until p.numparams) stack[i] = varargs.arg(i + 1)
         return execute(stack, if (p.is_vararg != 0) varargs.subargs(p.numparams + 1) else LuaValue.NONE)
+    }
+
+   fun stop(){
+       for (item in executionStack!!.getClosureStacks())
+           item.pc = item.code.size-2
     }
 
     protected fun execute(stack: Array<LuaValue>, varargs: Varargs): Varargs {
@@ -494,8 +505,11 @@ class LuaClosure
                             1 shl Lua.POS_B or (1 shl Lua.POS_C) -> {
                                 if (executionStack!!.getCurrentLevel() === executionStack!!.getJavaLevel()) {
                                     executionStack!!.setJavaLevel(Int.MAX_VALUE)
-                                } else
+                                } else{
+                                    if(stack[field.a] is LuaClosure) (stack[field.a] as LuaClosure).executionStack = executionStack
                                     stack[field.a].call()
+                                }
+
 
                                 executionStack!!.setCurrentLevel(executionStack!!.getCurrentLevel() - 1)
                                 ++field.pc
@@ -504,8 +518,10 @@ class LuaClosure
                             2 shl Lua.POS_B or (1 shl Lua.POS_C) -> {
                                 if (executionStack!!.getCurrentLevel() === executionStack!!.getJavaLevel()) {
                                     executionStack!!.setJavaLevel(Int.MAX_VALUE)
-                                } else
+                                } else{
+                                    if(stack[field.a] is LuaClosure) (stack[field.a] as LuaClosure).executionStack = executionStack
                                     stack[field.a].call(stack[field.a + 1])
+                                }
 
                                 executionStack!!.setCurrentLevel(executionStack!!.getCurrentLevel() - 1)
                                 ++field.pc
@@ -514,8 +530,10 @@ class LuaClosure
                             3 shl Lua.POS_B or (1 shl Lua.POS_C) -> {
                                 if (executionStack!!.getCurrentLevel() === executionStack!!.getJavaLevel()) {
                                     executionStack!!.setJavaLevel(Int.MAX_VALUE)
-                                } else
+                                } else{
+                                    if(stack[field.a] is LuaClosure) (stack[field.a] as LuaClosure).executionStack = executionStack
                                     stack[field.a].call(stack[field.a + 1], stack[field.a + 2])
+                                }
 
                                 executionStack!!.setCurrentLevel(executionStack!!.getCurrentLevel() - 1)
                                 ++field.pc
@@ -524,8 +542,10 @@ class LuaClosure
                             4 shl Lua.POS_B or (1 shl Lua.POS_C) -> {
                                 if (executionStack!!.getCurrentLevel() === executionStack!!.getJavaLevel()) {
                                     executionStack!!.setJavaLevel(Int.MAX_VALUE)
-                                } else
+                                } else {
+                                    if(stack[field.a] is LuaClosure) (stack[field.a] as LuaClosure).executionStack = executionStack
                                     stack[field.a].call(stack[field.a + 1], stack[field.a + 2], stack[field.a + 3])
+                                }
 
                                 executionStack!!.setCurrentLevel(executionStack!!.getCurrentLevel() - 1)
                                 ++field.pc
@@ -534,8 +554,10 @@ class LuaClosure
                             1 shl Lua.POS_B or (2 shl Lua.POS_C) -> {
                                 if (executionStack!!.getCurrentLevel() === executionStack!!.getJavaLevel()) {
                                     executionStack!!.setJavaLevel(Int.MAX_VALUE)
-                                } else
+                                } else {
+                                    if(stack[field.a] is LuaClosure) (stack[field.a] as LuaClosure).executionStack = executionStack
                                     stack[field.a] = stack[field.a].call()
+                                }
 
                                 executionStack!!.setCurrentLevel(executionStack!!.getCurrentLevel() - 1)
                                 ++field.pc
@@ -545,8 +567,10 @@ class LuaClosure
                                 if (executionStack!!.getCurrentLevel() === executionStack!!.getJavaLevel()) {
                                     stack[field.a] = executionStack!!.getReturnValue()
                                     executionStack!!.setJavaLevel(Int.MAX_VALUE)
-                                } else
+                                } else {
+                                    if(stack[field.a] is LuaClosure) (stack[field.a] as LuaClosure).executionStack = executionStack
                                     stack[field.a] = stack[field.a].call(stack[field.a + 1])
+                                }
 
                                 executionStack!!.setCurrentLevel(executionStack!!.getCurrentLevel() - 1)
                                 ++field.pc
@@ -556,8 +580,10 @@ class LuaClosure
                                 if (executionStack!!.getCurrentLevel() === executionStack!!.getJavaLevel()) {
                                     stack[field.a] = executionStack!!.getReturnValue()
                                     executionStack!!.setJavaLevel(Int.MAX_VALUE)
-                                } else
+                                } else {
+                                    if(stack[field.a] is LuaClosure) (stack[field.a] as LuaClosure).executionStack = executionStack
                                     stack[field.a] = stack[field.a].call(stack[field.a + 1], stack[field.a + 2])
+                                }
 
                                 executionStack!!.setCurrentLevel(executionStack!!.getCurrentLevel() - 1)
                                 ++field.pc
@@ -567,8 +593,10 @@ class LuaClosure
                                 if (executionStack!!.getCurrentLevel() === executionStack!!.getJavaLevel()) {
                                     stack[field.a] = executionStack!!.getReturnValue()
                                     executionStack!!.setJavaLevel(Int.MAX_VALUE)
-                                } else
+                                } else {
+                                    if(stack[field.a] is LuaClosure) (stack[field.a] as LuaClosure).executionStack = executionStack
                                     stack[field.a] = stack[field.a].call(stack[field.a + 1], stack[field.a + 2], stack[field.a + 3])
+                                }
 
                                 executionStack!!.setCurrentLevel(executionStack!!.getCurrentLevel() - 1)
                                 ++field.pc
@@ -755,10 +783,6 @@ class LuaClosure
         } catch (le: LuaError) {
             if (le.traceback == null) processErrorHooks(le, p, field.pc)
             throw le
-        } catch (se: SuspendExecution) {
-            throw se;
-        } catch (de: DieException) {
-            throw de;
         } catch (e: Exception) {
             val le = LuaError(e)
             processErrorHooks(le, p, field.pc)

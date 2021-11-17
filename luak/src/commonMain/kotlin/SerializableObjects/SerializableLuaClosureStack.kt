@@ -1,10 +1,9 @@
-package Vera
+package SerializableObjects
 
 import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
-import java.io.Serializable
 
-class SerializableLuaClosureStack : Serializable {
+class SerializableLuaClosureStack : java.io.Serializable {
     /**
      * стэк, на котором происходят вычисления в рамках одной функции
      */

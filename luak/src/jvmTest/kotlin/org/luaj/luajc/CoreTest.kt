@@ -1,20 +1,17 @@
 package org.luaj.luajc
 
-import Vera.SerializableExecutionLuaStack
-import Vera.SuspendExecution
-import Vera.ThreadLocalExecutionStack
-import org.luaj.vm2.LuaClosure
+import SerializableObjects.SerializableExecutionLuaStack
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.ObjectOutputStream
 import java.io.Serializable
 
-class CoreTest(
-    private val luaClosure: LuaClosure? = null
-)  : Serializable {
-    fun TestTest() : String{
-        val executionStack = ThreadLocalExecutionStack.get()
-        executionContext = serializeExecutionContext(executionStack)
-        throw SuspendExecution()
+class CoreTest()  : Serializable {
+    fun TestTest(){
+        val executionStack = luaClosure?.getExecutionContext()
+        File("filename1.txt").writeBytes(serializeExecutionContext(executionStack))
+        luaClosure?.stop()
+        luaClosure = null
     }
 
     private fun serializeExecutionContext(executionStack: SerializableExecutionLuaStack?): ByteArray {
@@ -25,5 +22,3 @@ class CoreTest(
         return byteOutputStream.toByteArray()
     }
 }
-
-var executionContext : ByteArray = ByteArray(0)

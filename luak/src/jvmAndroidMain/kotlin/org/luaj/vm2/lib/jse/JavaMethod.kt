@@ -21,8 +21,6 @@
  */
 package org.luaj.vm2.lib.jse
 
-import Vera.DieException
-import Vera.SuspendExecution
 import org.luaj.vm2.LuaError
 import org.luaj.vm2.LuaFunction
 import org.luaj.vm2.LuaValue
@@ -85,11 +83,6 @@ internal class JavaMethod :
         try {
             return CoerceJavaToLua.coerce(methods[fullName]!!.invoke(instance, *a))
         } catch (e: InvocationTargetException) {
-            if (e.targetException is SuspendExecution) {
-                throw e.targetException as SuspendExecution
-            } else if (e.targetException is DieException) {
-                throw e.targetException as DieException
-            }
             throw LuaError(e.targetException)
         } catch (e: Exception) {
             return LuaValue.error("coercion error $e")
